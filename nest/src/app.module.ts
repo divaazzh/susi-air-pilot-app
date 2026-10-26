@@ -6,6 +6,7 @@ import { PilotModule } from './pilot/pilot.module.js';
 import { FlightHoursModule } from './flight-hours/flight-hours.module.js';
 import { DocumentsModule } from './documents/documents.module.js';
 import { SchedulesModule } from './schedules/schedules.module.js';
+import { LogbookModule } from './logbook/logbook.module.js';
 import { AllExceptionsFilter } from './common/http-exception.filter.js';
 import { JwtAuthGuard } from './auth/jwt-auth.guard.js';
 
@@ -17,6 +18,7 @@ import { JwtAuthGuard } from './auth/jwt-auth.guard.js';
     FlightHoursModule,
     DocumentsModule,
     SchedulesModule,
+    LogbookModule,
   ],
   providers: [
     {

@@ -18,48 +18,30 @@
       <span class="nav-label">Schedule</span>
     </NuxtLink>
 
-    <button type="button" class="nav-item" @click="showToast('Logbook feature coming soon')">
+    <NuxtLink to="/logbook" class="nav-item" :class="{ active: currentRoute === '/logbook' }">
       <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
         <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1-2.5-2.5Z" />
         <path d="M6 6h10" />
         <path d="M6 10h10" />
       </svg>
       <span class="nav-label">Logbook</span>
-    </button>
+    </NuxtLink>
 
-    <button type="button" class="nav-item" @click="showToast('More settings coming soon')">
+    <NuxtLink to="/more" class="nav-item" :class="{ active: currentRoute === '/more' }">
       <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
         <circle cx="12" cy="12" r="1" />
         <circle cx="19" cy="12" r="1" />
         <circle cx="5" cy="12" r="1" />
       </svg>
       <span class="nav-label">More</span>
-    </button>
+    </NuxtLink>
   </nav>
-
-  <!-- Notification Toast -->
-  <Transition name="fade">
-    <div v-if="toastMessage" class="nav-toast">
-      {{ toastMessage }}
-    </div>
-  </Transition>
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue';
+import { computed } from 'vue';
 const route = useRoute();
 const currentRoute = computed(() => route.path);
-
-const toastMessage = ref('');
-let toastTimer: any = null;
-
-function showToast(msg: string) {
-  toastMessage.value = msg;
-  if (toastTimer) clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => {
-    toastMessage.value = '';
-  }, 2200);
-}
 </script>
 
 <style scoped lang="scss">

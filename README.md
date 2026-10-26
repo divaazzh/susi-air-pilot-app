@@ -8,7 +8,7 @@
 
 - **GitHub Repository**: [https://github.com/divaazzh/susi-air-pilot-app](https://github.com/divaazzh/susi-air-pilot-app)
 - **Live Frontend (GitHub Pages)**: [https://divaazzh.github.io/susi-air-pilot-app/](https://divaazzh.github.io/susi-air-pilot-app/)
-- **Live Backend API (Render / Containerized Cloud)**: Included in the repository and container ready (`Dockerfile` provided).
+- **One-Click Local Launcher**: `start-local.bat` (launches both NestJS backend on `:3000` and Nuxt 3 frontend on `:3001` simultaneously).
 
 ---
 
@@ -19,6 +19,39 @@ The backend authenticates pilots via `/auth/login` and issues signed JWT bearer 
 - **Username**: `johndoe`
 - **Password**: `susiairtest`
 - **Fixed System Date**: `2026-05-15` (As requested by the brief, evaluation logic is anchored to 15 May 2026).
+
+---
+
+## ✨ Value-Added Features & Enhancements (Fitur Tambahan)
+
+Beyond the baseline requirements of the brief, the following production-grade features were engineered to provide an authentic, fully operational flight deck experience:
+
+### 1. Functional Electronic Pilot Logbook (`/logbook`)
+- **Interactive Flight Logging Modal**: Pilots can input new duty flight legs with parameters: `Aircraft Type`, `Tail Number`, `Origin Base`, `Destination`, `Flight Hours`, and `Operational Remarks`.
+- **Dynamic CASR Daily Cap Validation**: Enforces maximum single-day flight limit of 8.0 hours with live visual warnings.
+- **Instant Accumulator**: Submitting a new leg updates the pilot's total flight hours in real-time across both frontend state and backend records.
+
+### 2. Interactive Schedule & Duty Leg Manifest Modal (`/schedule`)
+- Rather than a static non-functional notice, clicking any roster date opens an **Operational Duty Manifest Modal**:
+  - Displays full date formatting, duty category title, base station badge, planned legs count, and completion status.
+  - Generates detailed leg manifests (Origin → Destination, departure time, aircraft model, and tail registration).
+  - Provides a one-click transition button directly into the **eLogbook**.
+
+### 3. Comprehensive Operations & Fleet Reference (`/more`)
+- **CASR Pilot Duty Limits Matrix**: Clear summary of regulatory flight duty period (FDP) thresholds (Daily 8h, Weekly 40h, Monthly 100h, Annual 1050h).
+- **Susi Air Base Stations Directory**: Real-world aeronautical data for primary operating hubs (`MKW` Manokwari, `SIQ` Dabo Singkep, `CJN` Cijulang Nusawiru HQ, `PDG` Padang, `HLP` Jakarta Halim, `TIM` Timika) with runway lengths and tower radio frequencies.
+- **Fleet Specifications**: Performance data for Susi Air's operational aircraft (*Cessna 208B Grand Caravan EX*, *Pilatus PC-6 Porter STOL*, *Piaggio P180 Avanti II*).
+
+### 4. Official Susi Air Branding & Visual Asset Integration
+- Integrated the official Susi Air corporate combination mark:
+  - Serif wordmark for **"Susi"** with the 5-pointed crown emblem.
+  - Calligraphic script for **"Air"** in brand coral red.
+  - Transparent PNG and high-contrast white vector header variants.
+
+### 5. Resilient Offline Hybrid Architecture
+- The frontend features an intelligent fallback layer:
+  - Communicates directly with the NestJS API when the server is active.
+  - If viewed on static hosting (like GitHub Pages) while the external backend is sleeping, the hybrid client engine seamlessly executes the **identical server-side rolling sum math** and serves all 521 days of flight data and roster schedules without breaking.
 
 ---
 

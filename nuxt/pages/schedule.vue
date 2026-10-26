@@ -120,24 +120,68 @@
         </div>
 
         <div class="modal-body">
-          <div class="placeholder-icon-wrap">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="plane-icon">
-              <path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z" />
-            </svg>
+          <div class="duty-detail-header" v-if="selectedDay">
+            <div class="detail-base-badge" :style="selectedDay.duty ? { backgroundColor: selectedDay.duty.base_color } : {}">
+              {{ selectedDay.duty ? selectedDay.duty.base_name : 'OFF' }}
+            </div>
+            <div class="detail-title-group">
+              <h4 class="modal-title">{{ selectedDay.duty ? getDutyLabel(selectedDay.duty.duty_type) : 'Rest & Standby Day' }}</h4>
+              <span class="detail-date">{{ formatFullDate(selectedDay.dateStr) }}</span>
+            </div>
           </div>
-          <h4 class="modal-title">Detail page coming soon</h4>
-          <p class="modal-desc" v-if="selectedDay">
-            Selected Date: <strong>{{ selectedDay.dateStr }}</strong>
-            <template v-if="selectedDay.duty">
-              <br />Duty: <strong>{{ selectedDay.duty.duty_type }}</strong> · Base: <strong>{{ selectedDay.duty.base_name }}</strong>
-            </template>
-          </p>
-          <p class="modal-sub">This section will contain flight legs, route manifest, aircraft tail number, and crew briefing.</p>
+
+          <div v-if="selectedDay && selectedDay.duty" class="duty-stats-row">
+            <div class="stat-box">
+              <span class="label">Duty Code</span>
+              <span class="val">{{ selectedDay.duty.duty_type }}</span>
+            </div>
+            <div class="stat-box">
+              <span class="label">Planned Legs</span>
+              <span class="val">{{ selectedDay.duty.count_schedules }}</span>
+            </div>
+            <div class="stat-box">
+              <span class="label">Logged</span>
+              <span class="val">{{ selectedDay.duty.count_logbooks }}</span>
+            </div>
+            <div class="stat-box">
+              <span class="label">Status</span>
+              <span class="val-badge" :class="selectedDay.duty.count_logbooks === selectedDay.duty.count_schedules ? 'badge-ok' : 'badge-pending'">
+                {{ selectedDay.duty.count_logbooks === selectedDay.duty.count_schedules ? 'Completed' : 'Pending' }}
+              </span>
+            </div>
+          </div>
+
+          <!-- Manifest legs -->
+          <div class="manifest-section" v-if="selectedDay && selectedDay.duty && selectedDay.duty.count_schedules > 0">
+            <h5 class="manifest-title">Operational Flight Legs</h5>
+            <div class="manifest-legs">
+              <div v-for="leg in getMockLegs(selectedDay.duty)" :key="leg.legNumber" class="leg-card">
+                <div class="leg-top">
+                  <span class="leg-num">Leg {{ leg.legNumber }}</span>
+                  <span class="leg-route">{{ leg.from }} → {{ leg.to }}</span>
+                  <span class="leg-time">{{ leg.time }}</span>
+                </div>
+                <div class="leg-bottom">
+                  <span>Aircraft: <strong>{{ leg.aircraft }}</strong></span>
+                  <span>Tail: <strong>{{ leg.tail }}</strong></span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div v-else class="off-duty-note">
+            <p>No operational flight duties scheduled on this date. Designated rest day under CASR 135 fatigue management protocol.</p>
+          </div>
         </div>
 
-        <button type="button" class="modal-confirm-btn" @click="closeModal">
-          Understood
-        </button>
+        <div class="modal-actions">
+          <NuxtLink v-if="selectedDay && selectedDay.duty" to="/logbook" class="action-btn-primary" @click="closeModal">
+            Open in eLogbook
+          </NuxtLink>
+          <button type="button" class="modal-confirm-btn" @click="closeModal">
+            Close
+          </button>
+        </div>
       </div>
     </div>
   </div>
@@ -263,6 +307,45 @@ function hexToRgba(hex: string, alpha: number) {
   const g = (num >> 8) & 255;
   const b = num & 255;
   return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
+
+function getDutyLabel(type: string) {
+  const item = legend.value.find((l: any) => l.code === type);
+  return item ? `${item.label} (${type})` : `Flight Duty (${type})`;
+}
+
+function formatFullDate(dateStr: string) {
+  if (!dateStr) return '';
+  const d = new Date(dateStr);
+  return d.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+}
+
+function getMockLegs(duty: any) {
+  const count = duty.count_schedules || 1;
+  const base = duty.base_name || 'MKW';
+  const routes: Record<string, string[]> = {
+    MKW: ['SOQ', 'RDE', 'BXM', 'FKQ'],
+    SIQ: ['CJN', 'HLP', 'TNJ', 'BTH'],
+    CJN: ['HLP', 'BDG', 'SRG', 'SIQ'],
+    PDG: ['SIQ', 'MES', 'RKI', 'GNS'],
+    HLP: ['CJN', 'BKS', 'TKG', 'CBN'],
+  };
+  const destList = routes[base] || ['SOQ', 'TIM', 'DJJ', 'MKW'];
+  const legs = [];
+  const times = ['07:30', '10:15', '13:00', '15:45', '17:30', '19:00'];
+
+  for (let i = 0; i < count; i++) {
+    const dest = destList[i % destList.length];
+    legs.push({
+      legNumber: i + 1,
+      from: i === 0 ? base : destList[(i - 1) % destList.length],
+      to: dest,
+      time: times[i % times.length],
+      aircraft: 'Cessna 208B Grand Caravan',
+      tail: `PK-VV${String.fromCharCode(65 + i)}`,
+    });
+  }
+  return legs;
 }
 
 onMounted(() => {
@@ -564,55 +647,196 @@ onMounted(() => {
 }
 
 .modal-body {
-  text-align: center;
+  text-align: left;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  margin-bottom: 20px;
+  gap: 12px;
+  margin-bottom: 16px;
 }
 
-.placeholder-icon-wrap {
-  width: 52px;
-  height: 52px;
-  border-radius: 50%;
-  background-color: #E0F2FE;
-  color: #0284C7;
+.duty-detail-header {
   display: flex;
   align-items: center;
-  justify-content: center;
-  margin-bottom: 12px;
+  gap: 12px;
 }
 
-.plane-icon {
-  width: 26px;
-  height: 26px;
+.detail-base-badge {
+  font-size: 15px;
+  font-weight: 800;
+  color: #FFFFFF;
+  background-color: var(--color-primary-navy);
+  padding: 6px 12px;
+  border-radius: var(--radius-sm);
+}
+
+.detail-title-group {
+  display: flex;
+  flex-direction: column;
 }
 
 .modal-title {
-  font-size: 17px;
+  font-size: 16px;
   font-weight: 800;
   color: var(--color-primary-navy);
 }
 
-.modal-desc {
-  font-size: 12.5px;
-  color: var(--color-text-primary);
-  margin-top: 6px;
+.detail-date {
+  font-size: 11px;
+  color: var(--color-text-secondary);
+}
+
+.duty-stats-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+  background-color: #F8FAFC;
+  padding: 8px;
+  border-radius: var(--radius-sm);
+}
+
+.stat-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+
+  .label {
+    font-size: 9.5px;
+    font-weight: 700;
+    color: var(--color-text-muted);
+    text-transform: uppercase;
+  }
+
+  .val {
+    font-size: 13px;
+    font-weight: 800;
+    color: var(--color-primary-navy);
+  }
+
+  .val-badge {
+    font-size: 9.5px;
+    font-weight: 700;
+    padding: 1px 5px;
+    border-radius: 4px;
+
+    &.badge-ok {
+      background-color: var(--color-success-bg);
+      color: var(--color-success);
+    }
+
+    &.badge-pending {
+      background-color: var(--color-warning-bg);
+      color: var(--color-warning);
+    }
+  }
+}
+
+.manifest-section {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.manifest-title {
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--color-primary-navy);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.manifest-legs {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 180px;
+  overflow-y: auto;
+}
+
+.leg-card {
+  background-color: #F8FAFC;
+  border: 1px solid #E2E8F0;
+  border-radius: var(--radius-sm);
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.leg-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+}
+
+.leg-num {
+  font-size: 10px;
+  font-weight: 800;
+  color: var(--color-text-muted);
+}
+
+.leg-route {
+  font-weight: 800;
+  color: var(--color-primary-navy);
+}
+
+.leg-time {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--color-brand-red);
+}
+
+.leg-bottom {
+  display: flex;
+  justify-content: space-between;
+  font-size: 10.5px;
+  color: var(--color-text-secondary);
+
+  strong {
+    color: var(--color-primary-navy);
+  }
+}
+
+.off-duty-note {
+  background-color: #F1F5F9;
+  padding: 12px;
+  border-radius: var(--radius-sm);
+  font-size: 11.5px;
+  color: var(--color-text-secondary);
   line-height: 1.4;
 }
 
-.modal-sub {
-  font-size: 11px;
-  color: var(--color-text-muted);
-  margin-top: 8px;
+.modal-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.action-btn-primary {
+  flex: 1;
+  height: 40px;
+  background-color: var(--color-brand-red);
+  color: #FFFFFF;
+  border-radius: var(--radius-full);
+  font-size: 13px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+
+  &:hover {
+    background-color: var(--color-brand-red-hover);
+  }
 }
 
 .modal-confirm-btn {
-  height: 42px;
+  flex: 1;
+  height: 40px;
   background-color: var(--color-primary-navy);
   color: #FFFFFF;
   border-radius: var(--radius-full);
-  font-size: 13.5px;
+  font-size: 13px;
   font-weight: 700;
 }
 </style>

@@ -1,14 +1,23 @@
-import { Controller, Get, Query, ValidationPipe, UsePipes } from '@nestjs/common';
-import { SchedulesService } from './schedules.service.js';
-import { SchedulesQueryDto } from './dto/schedules-query.dto.js';
+import { Controller, Get, Query } from '@nestjs/common';
+import { DataStoreService } from '../common/data-store.service.js';
 
 @Controller('schedules')
 export class SchedulesController {
-  constructor(private schedulesService: SchedulesService) {}
+  constructor(private dataStore: DataStoreService) {}
 
   @Get()
-  @UsePipes(new ValidationPipe({ transform: true, whitelist: true }))
-  getSchedules(@Query() query: SchedulesQueryDto) {
-    return this.schedulesService.getSchedules(query.year, query.month);
+  getSchedules(@Query('year') year: string, @Query('month') month: string) {
+    const schData = this.dataStore.getSchedulesData();
+    let schedules = schData.schedules || [];
+
+    if (year && month) {
+      const prefix = `${year}-${month.padStart(2, '0')}`;
+      schedules = schedules.filter((s: any) => s.duty_date && s.duty_date.startsWith(prefix));
+    }
+
+    return {
+      legend: schData.legend || [],
+      schedules,
+    };
   }
 }
