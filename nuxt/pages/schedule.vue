@@ -115,7 +115,10 @@
     <div v-if="showModal" class="modal-backdrop" @click.self="closeModal">
       <div class="modal-card">
         <div class="modal-header">
-          <span class="modal-badge">Flight Duty Detail</span>
+          <div class="header-badge-wrap">
+            <span class="modal-badge">Flight Duty Detail</span>
+            <span class="placeholder-tag">Detail page coming soon</span>
+          </div>
           <button class="modal-close-btn" @click="closeModal">✕</button>
         </div>
 
@@ -630,6 +633,13 @@ onMounted(() => {
   margin-bottom: 14px;
 }
 
+.header-badge-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
 .modal-badge {
   font-size: 11px;
   font-weight: 800;
@@ -637,6 +647,15 @@ onMounted(() => {
   color: var(--color-brand-red);
   background-color: var(--color-brand-red-light);
   padding: 3px 8px;
+  border-radius: var(--radius-full);
+}
+
+.placeholder-tag {
+  font-size: 10px;
+  font-weight: 700;
+  color: #0284C7;
+  background-color: #E0F2FE;
+  padding: 2px 7px;
   border-radius: var(--radius-full);
 }
 
