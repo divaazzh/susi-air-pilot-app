@@ -73,6 +73,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
 import { useAuthStore } from '~/stores/auth';
+import { ClientFlightService } from '~/utils/flight-service';
 
 const authStore = useAuthStore();
 const config = useRuntimeConfig();
@@ -80,19 +81,8 @@ const config = useRuntimeConfig();
 const pilot = ref(authStore.pilot);
 const selectedRange = ref('1w');
 
-const summaryData = ref({
-  limit: 40,
-  maxY: 45,
-  cards: [
-    { label: 'Daily', key: 'daily', currentHours: 6.4, limitHours: 8, percentage: 80, isOverLimit: false },
-    { label: 'Weekly', key: 'weekly', currentHours: 25.2, limitHours: 40, percentage: 63, isOverLimit: false },
-    { label: 'Monthly', key: 'monthly', currentHours: 87.2, limitHours: 100, percentage: 87, isOverLimit: false },
-    { label: 'Annual', key: 'annual', currentHours: 1013.8, limitHours: 1050, percentage: 97, isOverLimit: false },
-  ],
-  chart: [] as any[],
-});
-
-const documents = ref([] as any[]);
+const summaryData = ref(ClientFlightService.rollingWindowBluffing('1w'));
+const documents = ref(ClientFlightService.getDocuments().documents);
 
 async function fetchSummary(range: string) {
   try {
@@ -100,12 +90,14 @@ async function fetchSummary(range: string) {
       headers: {
         Authorization: `Bearer ${authStore.token}`,
       },
+      timeout: 3000,
     });
     if (res) {
       summaryData.value = res;
     }
   } catch (e) {
-    console.error('Failed to fetch summary', e);
+    console.warn('Backend unavailable, using fallback flight calculation', e);
+    summaryData.value = ClientFlightService.rollingWindowBluffing(range);
   }
 }
 
@@ -115,12 +107,14 @@ async function fetchDocuments() {
       headers: {
         Authorization: `Bearer ${authStore.token}`,
       },
+      timeout: 3000,
     });
     if (res && res.documents) {
       documents.value = res.documents;
     }
   } catch (e) {
-    console.error('Failed to fetch documents', e);
+    console.warn('Backend unavailable, using fallback documents', e);
+    documents.value = ClientFlightService.getDocuments().documents;
   }
 }
 

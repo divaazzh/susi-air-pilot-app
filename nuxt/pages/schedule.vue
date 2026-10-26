@@ -146,6 +146,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
 import { useAuthStore } from '~/stores/auth';
+import { ClientFlightService } from '~/utils/flight-service';
 
 const authStore = useAuthStore();
 const config = useRuntimeConfig();
@@ -154,8 +155,9 @@ const currentYear = ref(2026);
 const currentMonth = ref(5); // May
 const loading = ref(false);
 
-const schedules = ref([] as any[]);
-const legend = ref([] as any[]);
+const initialSchedules = ClientFlightService.getSchedules(2026, 5);
+const schedules = ref(initialSchedules.schedules);
+const legend = ref(initialSchedules.legend);
 
 const showModal = ref(false);
 const selectedDay = ref<any>(null);
@@ -204,6 +206,7 @@ async function fetchSchedules() {
       headers: {
         Authorization: `Bearer ${authStore.token}`,
       },
+      timeout: 3000,
     });
 
     if (res) {
@@ -213,7 +216,10 @@ async function fetchSchedules() {
       }
     }
   } catch (e) {
-    console.error('Failed to fetch schedules', e);
+    console.warn('Backend unavailable, using fallback schedules calculation', e);
+    const fallback = ClientFlightService.getSchedules(currentYear.value, currentMonth.value);
+    schedules.value = fallback.schedules;
+    legend.value = fallback.legend;
   } finally {
     loading.value = false;
   }
